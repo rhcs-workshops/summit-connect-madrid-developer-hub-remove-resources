@@ -4,12 +4,22 @@ const bodyParser = require('body-parser');
 const { exec } = require('child_process');
 const axios = require('axios');
 
+var ocp_token   = process.env.OCP_TOKEN;
+var ocp_url   = process.env.OCP_URL;
+const gitlabApiUrl = process.env.GITLAB_URL ; // Reemplazar con la URL de su instancia de GitLab, ex: https://gitlab-gitlab.apps.com/api/v4   
+const gitlabToken = process.env.GITLAB_TOKEN; // Reemplazar con su token personal de GitLab
+const quayApiUrl = process.env.QUAY_URL; // Reemplazar con la URL de su API de Quay
+const quayToken = process.env.QUAY_TOKEN; // Reemplazar con su token de Quay
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
 
 
-// Ejecutar el comando 'oc get namespaces' y procesar la respuesta
+// Conectarse al cluster OpenShift
+       signInOpenShift();
+
+ // Ejecutar el comando 'oc get namespaces' y procesar la respuesta
 exec('oc get namespaces -o json', (error, stdout, stderr) => {
     if (error) {
       console.error(`Error ejecutando el comando: ${error.message}`);
@@ -47,13 +57,13 @@ exec('oc get namespaces -o json', (error, stdout, stderr) => {
         </table>
        <tr>
        <input type="button" value="Refresh" onclick="location.reload()">
-       </tr>         
+       </tr> 
       <h1>Remove cluster resources</h1>
       <form action="/delete" method="post">
         Demo name: <input type="text" name="username" required><br><br>
         <input type="submit" value="Remove">
       </form>
-        </body>
+      </body>
       </html>
       `;
 
@@ -67,6 +77,7 @@ app.post('/delete', async (req, res) => {
     const username = req.body.username;
 
     try {
+
         // Eliminar namespaces de OpenShift
         await deleteOpenShiftNamespaces(username);
 
@@ -78,7 +89,6 @@ app.post('/delete', async (req, res) => {
 
         // Eliminar repositorios de GitLab
         await deleteGitLabRepositories(username);
-
 
 
         res.send(`Se han eliminado los recursos asociados al usuario ${username}. <tr><input type="button" value="Back" onclick="window.history.back()"> </tr> `);
@@ -145,6 +155,32 @@ const deleteOpenShiftNamespaces = async (username) => {
 
 };
 
+// Función para sign in OpenShift
+const signInOpenShift = async () => {
+    const command = `oc login --token=${ocp_token} --server=${ocp_url} --insecure-skip-tls-verify`;
+
+    try {
+        // Ejecutar el comando
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+            console.error(`Error ejecutando el comando: ${error.message}`);
+            return;
+            }
+        
+            if (stderr) {
+            console.error(`Error en la salida del comando: ${stderr}`);
+            return;
+            }
+          // Mostrar la salida del comando
+             console.log(`Resultado del comando:\n${stdout}`);
+      });
+  
+    } catch (error) {
+        console.error('Error al conectarse al cluster OpenShift', error);
+        throw error;
+    }
+};
+
 // Función para eliminar aplicaciones de Argo CD
 const deleteArgoCDApplications = async (username) => {
     const command = `oc delete applications.argoproj.io ${username}-bootstrap -n janus-argocd`;
@@ -173,8 +209,6 @@ const deleteArgoCDApplications = async (username) => {
 
 // Función para eliminar repositorios de GitLab
 const deleteGitLabRepositories = async (username) => {
-    const gitlabApiUrl = 'https://XXXXXXXXXXXXX/api/v4'; // Reemplazar con la URL de su instancia de GitLab, ex: https://gitlab-gitlab.apps.com/api/v4   
-    const gitlabToken = 'YYYYYYYYYYYYYYYYYYYY'; // Reemplazar con su token personal de GitLab
 
     try {
         let page = 1;
@@ -223,8 +257,6 @@ const deleteGitLabRepositories = async (username) => {
 
 // Función para eliminar repositorios de Quay
 const deleteQuayRepositories = async (username) => {
-    const quayApiUrl = 'https://XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/api/v1'; // Reemplazar con la URL de su API de Quay
-    const quayToken = 'YYYYYYYYYYYYYYYYYYYYYYYYYYYYY'; // Reemplazar con su token de Quay
     // quayadmin+removeresources
     try {
 

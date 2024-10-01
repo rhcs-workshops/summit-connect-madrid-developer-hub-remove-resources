@@ -6,7 +6,14 @@ The aim of this application is keeping the resources of the OpenShift cluster un
 *   Gitlab respositories ("demo-name","demo-name-gitops")
 *   Quay images
 
-# Instructions:
+There are 3 different deployment ways:
+* Local
+* Container
+* OpenShift
+
+Choose your preferred installation
+
+# Instructions installation LOCAL:
 
 ## Prerequisites
 
@@ -16,24 +23,23 @@ Make sure you have oc (CLI), Node.js and npm installed.
 
 Install the node.js dependencies by running:
 
-
 ```console
 npm install express body-parser axios
 ```
 
-## Configure tokens and URLS
+## Configure tokens and URLS with environment variables
 
-Edit app.js and replace gitlab and quay tokens and URLs:
+These are the varaibles required:
 
 ```console
-  178  const gitlabApiUrl = 'https://XXXXXXXXXXXXX/api/v4'; // Replace by GItlab API URL
-  180  const gitlabToken = 'YYYYYYYYYYYYYYYYYYYY'; // Replace by Gitlab token
-    ....
-  229 const quayApiUrl = 'https://XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/api/v1'; // Replace by Quay API URL  
-  230 const quayToken = 'YYYYYYYYYYYYYYYYYYYYYYYYYYYYY'; // Reeplace by Quay token
+export QUAY_URL=https://quay-2l6cq.apps.cluster-2l6cq.2l6cq.sandbox919.opentlc.com/api/v1
+export QUAY_TOKEN=3A4WIO0FG9390XEORPUD98A
+export GITLAB_URL=https://gitlab-gitlab.apps.cluster-2l6cq.2l6cq.sandbox919.opentlc.com/api/v4
+export GITLAB_TOKEN=glpat-Qqyt1Yf
+export OCP_TOKEN=sha256~zensYev9b
 ```
 
-Find some examples about how to get your tokens as follows:
+### You can find your tokens as we show as follows:
 
 *   GITLAB
 
@@ -44,22 +50,35 @@ Find some examples about how to get your tokens as follows:
 
 ![image info](./docs/quay-token.png)
 
-
-## Sign in your OpenShift cluster
-
-ex. oc login.....
-
 ## Run application:
 
 ```console
 node app.js
 ```
 
-
 Open your browser and visit http://localhost:3000/. Add demo name and click on "Remove" button.
 
 ![image info](./docs/remove-screenshot.png)
 
-
 Note: Deleting resources is a destructive operation. Please ensure you fully understand the impact and have the necessary backups before running this code in a live environment.
+
+
+# Installation in CONTAINER:
+
+## Podman commands
+
+```console
+podman build -t node-app .
+podman run -p 3000:3000 -d -e OCP_TOKEN=sha256~zensYev9b85EpaljQPRJ-Wvfo0M-T_zWvFlw -e OCP_URL=https://api.cluster-2l6cq.2l6cq.sandbox919.opentlc.com:6443 -e GITLAB_URL=https://gitlab-gitlab.apps.cluster-2l6cq.2l6cq.sandbox919.opentlc.com/api/v4 -e GITLAB_TOKEN=glpat-Qqyt1YfLwNVs -e QUAY_URL=https://quay-2l6cq.apps.cluster-2l6cq.2l6cq.sandbox919.opentlc.com/api/v1 -e QUAY_TOKEN=3A4WIO0FG9390XEORPUQ9M0EYVK6 node-app
+```
+
+# Installation in OpenShift:
+
+OpenShift console -> Developer view -> Add -> Container Image
+
+![image info](./docs/deploy-cleandemo.png)
+
+Adding environment variables
+
+![image info](./docs/deploy-cleandemo2.png)
 
